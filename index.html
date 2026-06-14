@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard IREM — Investigation Recommendation Effectiveness Management</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;font-size:13px;color:#1a1a1a;background:#f0f2f5;height:100vh;overflow:hidden}
+  .app{display:flex;height:100vh}
+
+  /* SIDEBAR */
+  .sidebar{width:220px;min-width:220px;background:#0f2044;color:#fff;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+  .sidebar-logo{padding:16px 16px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .logo-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .logo-shield{width:32px;height:32px;background:#1a6fb5;border-radius:6px;display:flex;align-items:center;justify-content:center}
+  .logo-text{font-size:15px;font-weight:700;letter-spacing:.5px}
+  .logo-sub{font-size:8.5px;color:rgba(255,255,255,.45);line-height:1.4;margin-left:40px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;color:rgba(255,255,255,.72);transition:background .15s;border-left:3px solid transparent;font-size:12.5px;user-select:none}
+  .nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+  .nav-item.active{background:rgba(255,255,255,.13);color:#fff;border-left-color:#1a8fff}
+  .nav-item i{font-size:16px;min-width:18px}
+  .nav-sub{display:none}.nav-sub.open{display:block}
+  .nav-item.sub{padding-left:42px;font-size:12px}
+  .menu-arrow{font-size:11px;margin-left:auto;transition:transform .2s;display:inline-block}
+  .sidebar-footer{margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding:6px 0}
+
+  /* MAIN */
+  .main{flex:1;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+  .topbar{background:#fff;border-bottom:1px solid #e0e4ea;padding:9px 20px;display:flex;align-items:center;gap:10px;flex-shrink:0;z-index:10}
+  .topbar-title{font-size:14px;font-weight:600;flex:1;color:#0f2044}
+  .period-select{padding:6px 10px;border:1px solid #d0d5dd;border-radius:6px;background:#fff;color:#333;font-size:12px;cursor:pointer}
+  .btn-filter{display:flex;align-items:center;gap:5px;padding:6px 12px;border:1px solid #d0d5dd;border-radius:6px;background:#fff;color:#333;cursor:pointer;font-size:12px}
+  .user-badge{display:flex;align-items:center;gap:8px;padding:4px 10px;border:1px solid #d0d5dd;border-radius:6px;background:#fff}
+  .user-avatar{width:28px;height:28px;border-radius:50%;background:#1a6fb5;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600}
+  .user-info .name{font-size:11px;font-weight:600}
+  .user-info .dept{font-size:10px;color:#666}
+
+  /* CONTENT */
+  .content{padding:14px 18px;flex:1;overflow-y:auto}
+  .page-view{display:none}.page-view.active{display:block}
+  .section-title{font-size:11px;font-weight:700;margin-bottom:10px;color:#5a6580;text-transform:uppercase;letter-spacing:.6px}
+
+  /* KPI */
+  .kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
+  .kpi-card{background:#fff;border:1px solid #e4e8ef;border-radius:10px;padding:12px 14px;position:relative;overflow:hidden}
+  .kpi-label{font-size:9.5px;font-weight:700;color:#1a8fff;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+  .kpi-label.orange{color:#d97706}.kpi-label.red{color:#dc2626}.kpi-label.purple{color:#7c3aed}.kpi-label.teal{color:#0d9488}
+  .kpi-value{font-size:24px;font-weight:700;line-height:1;margin-bottom:2px;color:#0f2044}
+  .kpi-sub{font-size:10px;color:#888}
+  .kpi-icon{position:absolute;right:10px;top:10px;font-size:26px;opacity:.15}
+  .kpi-trend{font-size:10px;margin-top:5px;display:flex;align-items:center;gap:2px}
+  .trend-up{color:#16a34a}.trend-down{color:#dc2626}
+
+  /* CHARTS ROW */
+  .charts-row{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+  .chart-card{background:#fff;border:1px solid #e4e8ef;border-radius:10px;padding:12px 14px}
+  .chart-title{font-size:12px;font-weight:600;margin-bottom:8px;color:#0f2044}
+  .chart-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;font-size:10px;color:#555}
+  .leg-box{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:3px;vertical-align:middle}
+  .leg-line{width:14px;height:0;border-bottom:2px solid;display:inline-block;margin-right:3px;vertical-align:middle}
+  .leg-dash{width:14px;height:0;border-bottom:2px dashed;display:inline-block;margin-right:3px;vertical-align:middle}
+
+  /* ROOT CAUSE BARS */
+  .rc-bar-wrap{margin-bottom:6px}
+  .rc-bar-label{font-size:10px;display:flex;justify-content:space-between;margin-bottom:2px}
+  .rc-bar-bg{background:#f0f2f5;border-radius:4px;height:6px}
+  .rc-bar-fill{height:6px;border-radius:4px}
+
+  /* BOTTOM ROW */
+  .bottom-row{display:grid;grid-template-columns:1.6fr 1.1fr 1fr;gap:10px}
+  .table-card{background:#fff;border:1px solid #e4e8ef;border-radius:10px;padding:12px 14px}
+
+  /* TABLES */
+  table{width:100%;border-collapse:collapse;font-size:11.5px}
+  th{color:#6b7280;font-weight:600;text-align:left;padding:5px 8px;border-bottom:1px solid #e4e8ef;font-size:11px;white-space:nowrap}
+  td{padding:5px 8px;border-bottom:1px solid #f0f2f5;color:#1a1a1a;vertical-align:middle}
+  tr:hover td{background:#fafbfc}
+  .badge{padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap}
+  .badge-red{background:#fee2e2;color:#991b1b}
+  .badge-yellow{background:#fef3c7;color:#92400e}
+  .badge-green{background:#dcfce7;color:#166534}
+  .badge-blue{background:#dbeafe;color:#1e40af}
+  .badge-gray{background:#f3f4f6;color:#374151}
+  .badge-orange{background:#fff7ed;color:#9a3412}
+  .badge-purple{background:#f3e8ff;color:#6b21a8}
+  .badge-today{background:#fef9c3;color:#854d0e}
+
+  /* ACTIVITY */
+  .activity-item{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f0f2f5;align-items:flex-start}
+  .activity-item:last-child{border-bottom:none}
+  .act-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+  .act-green{background:#dcfce7;color:#166534}.act-blue{background:#dbeafe;color:#1e40af}.act-orange{background:#fff7ed;color:#9a3412}
+  .act-text{font-size:11px;line-height:1.4;color:#1a1a1a}
+  .act-meta{font-size:10px;color:#888;margin-top:1px}
+
+  /* TOOLBAR */
+  .toolbar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:4px;padding:6px 11px;border:1px solid #d0d5dd;border-radius:6px;background:#fff;color:#333;cursor:pointer;font-size:11.5px;transition:background .15s;white-space:nowrap}
+  .btn:hover{background:#f5f7fa}
+  .btn-primary{background:#1a6fb5;color:#fff;border-color:#1a6fb5;font-weight:600}
+  .btn-primary:hover{background:#145c99}
+  .btn-danger{background:#dc2626;color:#fff;border-color:#dc2626}
+  .btn-danger:hover{background:#b91c1c}
+  .link-more{font-size:11px;color:#1a8fff;cursor:pointer;display:inline-flex;align-items:center;gap:3px;margin-top:8px;text-decoration:none}
+  .link-more:hover{text-decoration:underline}
+  .overdue-badge{background:#fee2e2;color:#991b1b;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+  .modal-overlay.open{display:flex}
+  .modal{background:#fff;border-radius:12px;padding:22px;width:460px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .modal-title{font-size:14px;font-weight:700;color:#0f2044}
+  .form-group{margin-bottom:12px}
+  .form-label{font-size:11px;color:#555;margin-bottom:3px;display:block;font-weight:600}
+  .form-control{width:100%;padding:7px 10px;border:1px solid #d0d5dd;border-radius:6px;background:#fff;color:#1a1a1a;font-size:12px;font-family:inherit}
+  .form-control:focus{outline:none;border-color:#1a6fb5;box-shadow:0 0 0 2px rgba(26,111,181,.12)}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .modal-footer{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+
+  /* SEARCH */
+  .search-box{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #d0d5dd;border-radius:6px;background:#fff}
+  .search-box input{border:none;outline:none;font-size:12px;color:#333;width:180px;font-family:inherit}
+  .search-box i{color:#aaa;font-size:15px}
+
+  /* FORM SECTION TITLE */
+  .form-section{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;border-top:1px solid #f0f2f5;padding-top:10px}
+
+  /* PENGATURAN */
+  .settings-card{background:#fff;border:1px solid #e4e8ef;border-radius:10px;padding:18px;max-width:520px;margin-bottom:14px}
+  .settings-section-title{font-size:12px;font-weight:700;color:#0f2044;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #f0f2f5}
+
+  /* PAGINATION */
+  .pagination{display:flex;gap:4px;margin-top:10px;align-items:center;font-size:11px;color:#555}
+  .page-btn{padding:4px 8px;border:1px solid #d0d5dd;border-radius:4px;cursor:pointer;background:#fff;font-size:11px}
+  .page-btn.active{background:#1a6fb5;color:#fff;border-color:#1a6fb5}
+  .page-btn:hover:not(.active){background:#f0f2f5}
+
+  /* FOOTER */
+  .dashboard-footer{margin-top:12px;font-size:10px;color:#aaa;padding-top:8px;border-top:1px solid #e4e8ef;display:flex;justify-content:space-between}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:24px;right:24px;background:#0f2044;color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:320px}
+  .toast.show{opacity:1}
+
+  /* CONFIRM DIALOG */
+  .confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300;align-items:center;justify-content:center}
+  .confirm-overlay.open{display:flex}
+  .confirm-box{background:#fff;border-radius:10px;padding:20px;width:340px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+  .confirm-title{font-size:14px;font-weight:700;margin-bottom:8px;color:#0f2044}
+  .confirm-msg{font-size:12px;color:#555;margin-bottom:16px;line-height:1.5}
+  .confirm-btns{display:flex;gap:8px;justify-content:center}
+
+  /* TABS */
+  .tab-bar{display:flex;gap:2px;border-bottom:2px solid #e4e8ef;margin-bottom:14px}
+  .tab-btn{padding:7px 14px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:#888;font-weight:500}
+  .tab-btn.active{color:#1a6fb5;border-bottom-color:#1a6fb5;font-weight:700}
+  .tab-content{display:none}.tab-content.active{display:block}
+
+  /* STAT MINI */
+  .stat-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+  .stat-mini{background:#f7f9fc;border-radius:8px;padding:10px;text-align:center}
+  .stat-mini .val{font-size:20px;font-weight:700;color:#0f2044}
+  .stat-mini .lbl{font-size:10px;color:#888;margin-top:2px}
+
+  @media(max-width:1200px){
+    .kpi-grid{grid-template-columns:repeat(3,1fr)}
+    .charts-row{grid-template-columns:1fr 1fr}
+    .bottom-row{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-top">
+        <div class="logo-shield"><i class="ti ti-shield-check" style="font-size:18px;color:#fff"></i></div>
+        <div class="logo-text">IREM</div>
+      </div>
+      <div class="logo-sub">INVESTIGATION RECOMMENDATION<br>EFFECTIVENESS MANAGEMENT</div>
+    </div>
+    <div style="padding:8px 0;flex:1">
+      <div class="nav-item active" onclick="showPage('dashboard',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
+      <div class="nav-item" onclick="showPage('investigasi',this)"><i class="ti ti-search"></i>Investigasi</div>
+      <div class="nav-item" onclick="showPage('rekomendasi',this)"><i class="ti ti-clipboard-list"></i>Rekomendasi</div>
+      <div class="nav-item" onclick="showPage('action',this)"><i class="ti ti-clock"></i>Action Tracking</div>
+      <div class="nav-item" onclick="showPage('verifikasi',this)"><i class="ti ti-circle-check"></i>Verifikasi Efektivitas</div>
+      <div class="nav-item" onclick="showPage('rootcause',this)"><i class="ti ti-git-branch"></i>Repeat Root Cause</div>
+      <div class="nav-item" onclick="showPage('laporan',this)"><i class="ti ti-report"></i>Laporan</div>
+      <div class="nav-item" id="nav-master-toggle" onclick="toggleNav('master')"><i class="ti ti-database"></i>Master Data<span class="menu-arrow" id="arrow-master">›</span></div>
+      <div class="nav-sub" id="nav-master">
+        <div class="nav-item sub" onclick="showPage('master-dept',this)"><i class="ti ti-building"></i>Departemen</div>
+        <div class="nav-item sub" onclick="showPage('master-tipe',this)"><i class="ti ti-tag"></i>Tipe Kejadian</div>
+        <div class="nav-item sub" onclick="showPage('master-user',this)"><i class="ti ti-users"></i>Pengguna</div>
+      </div>
+      <div class="nav-item" onclick="showPage('pengaturan',this)"><i class="ti ti-settings"></i>Pengaturan</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="nav-item" onclick="doLogout()"><i class="ti ti-logout"></i>Logout</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard IREM</div>
+      <select class="period-select" id="period-select" onchange="updatePeriod(this.value)">
+        <option value="2024-2025">Periode: Jan 2024 – Mei 2025</option>
+        <option value="2023">Periode: Jan 2023 – Des 2023</option>
+        <option value="2022">Periode: Jan 2022 – Des 2022</option>
+      </select>
+      <button class="btn-filter btn" onclick="showFilterModal()"><i class="ti ti-filter"></i>Filter</button>
+      <div class="user-badge">
+        <div class="user-avatar">AI</div>
+        <div class="user-info">
+          <div class="name">Admin IREM</div>
+          <div class="dept">HSE Department</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ==================== DASHBOARD ==================== -->
+      <div class="page-view active" id="page-dashboard">
+        <div class="section-title">Ringkasan Kinerja IREM</div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Total Investigasi</div>
+            <div class="kpi-value" id="kpi-total">128</div>
+            <div class="kpi-sub">Kejadian</div>
+            <i class="ti ti-file-text kpi-icon" style="color:#1a8fff"></i>
+            <div class="kpi-trend trend-up"><i class="ti ti-trending-up"></i>&nbsp;12% dari periode lalu</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Rekomendasi</div>
+            <div class="kpi-value" id="kpi-rek">256</div>
+            <div class="kpi-sub">Rekomendasi</div>
+            <i class="ti ti-clipboard-check kpi-icon" style="color:#1a8fff"></i>
+            <div class="kpi-trend trend-up"><i class="ti ti-trending-up"></i>&nbsp;15% dari periode lalu</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label orange">Closure Rate</div>
+            <div class="kpi-value" id="kpi-closure">87%</div>
+            <div class="kpi-sub">Target ≥ 90%</div>
+            <i class="ti ti-chart-donut kpi-icon" style="color:#d97706"></i>
+            <div class="kpi-trend trend-down"><i class="ti ti-trending-down"></i>&nbsp;-3% dari periode lalu</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label red">Overdue Rekomendasi</div>
+            <div class="kpi-value" id="kpi-overdue">18</div>
+            <div class="kpi-sub">Rekomendasi</div>
+            <i class="ti ti-alarm kpi-icon" style="color:#dc2626"></i>
+            <div class="kpi-trend trend-down"><i class="ti ti-trending-down"></i>&nbsp;5 dari periode lalu</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label purple">Action Effectiveness</div>
+            <div class="kpi-value" id="kpi-effect">82%</div>
+            <div class="kpi-sub">Target ≥ 85%</div>
+            <i class="ti ti-shield-check kpi-icon" style="color:#7c3aed"></i>
+            <div class="kpi-trend trend-up"><i class="ti ti-trending-up"></i>&nbsp;4% dari periode lalu</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label teal">Repeat Incident</div>
+            <div class="kpi-value" id="kpi-repeat">7</div>
+            <div class="kpi-sub">Kejadian</div>
+            <i class="ti ti-refresh kpi-icon" style="color:#0d9488"></i>
+            <div class="kpi-trend trend-up"><i class="ti ti-trending-up" style="color:#16a34a"></i>&nbsp;-2 dari periode lalu</div>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-title">Trend Kejadian</div>
+            <div class="chart-legend">
+              <span><span class="leg-box" style="background:#1a8fff"></span>Kejadian Insiden</span>
+              <span><span class="leg-dash" style="border-color:#e8811a"></span>Notifikasi BPJS</span>
+              <span><span class="leg-dash" style="border-color:#16a34a"></span>Target</span>
+            </div>
+            <div style="position:relative;width:100%;height:195px"><canvas id="trendChart" role="img" aria-label="Trend kejadian insiden dan notifikasi BPJS"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Status Rekomendasi</div>
+            <div class="chart-legend" style="flex-direction:column;gap:3px">
+              <span><span class="leg-box" style="background:#16a34a"></span>Closed Efektif 141 (55%)</span>
+              <span><span class="leg-box" style="background:#1a8fff"></span>In Progress 78 (30%)</span>
+              <span><span class="leg-box" style="background:#e8811a"></span>Open 19 (7%)</span>
+              <span><span class="leg-box" style="background:#dc2626"></span>Overdue 18 (7%)</span>
+            </div>
+            <div style="position:relative;width:100%;height:140px"><canvas id="statusChart" role="img" aria-label="Status rekomendasi donut chart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Distribusi Severity</div>
+            <div class="chart-legend" style="flex-direction:column;gap:3px">
+              <span><span class="leg-box" style="background:#dc2626"></span>High 46 (36%)</span>
+              <span><span class="leg-box" style="background:#e8811a"></span>Medium 60 (47%)</span>
+              <span><span class="leg-box" style="background:#16a34a"></span>Low 22 (17%)</span>
+            </div>
+            <div style="position:relative;width:100%;height:140px"><canvas id="severityChart" role="img" aria-label="Distribusi severity donut chart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Top 5 Repeat Root Cause</div>
+            <div style="margin-top:4px">
+              <div class="rc-bar-wrap"><div class="rc-bar-label"><span>Weak Supervision</span><span style="color:#dc2626;font-weight:700">21</span></div><div class="rc-bar-bg"><div class="rc-bar-fill" style="background:#dc2626;width:100%"></div></div></div>
+              <div class="rc-bar-wrap"><div class="rc-bar-label"><span>Poor Maintenance Planning</span><span style="color:#e8811a;font-weight:700">17</span></div><div class="rc-bar-bg"><div class="rc-bar-fill" style="background:#e8811a;width:81%"></div></div></div>
+              <div class="rc-bar-wrap"><div class="rc-bar-label"><span>SOP Not Followed</span><span style="color:#e8811a;font-weight:700">13</span></div><div class="rc-bar-bg"><div class="rc-bar-fill" style="background:#e8811a;width:62%"></div></div></div>
+              <div class="rc-bar-wrap"><div class="rc-bar-label"><span>Inadequate Training</span><span style="color:#16a34a;font-weight:700">8</span></div><div class="rc-bar-bg"><div class="rc-bar-fill" style="background:#16a34a;width:38%"></div></div></div>
+              <div class="rc-bar-wrap"><div class="rc-bar-label"><span>Communication Failure</span><span style="color:#0d9488;font-weight:700">5</span></div><div class="rc-bar-bg"><div class="rc-bar-fill" style="background:#0d9488;width:24%"></div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-row">
+          <div class="table-card">
+            <div class="chart-title" style="display:flex;align-items:center">Rekomendasi Overdue<span class="overdue-badge">18</span></div>
+            <table>
+              <thead><tr><th>No</th><th>No. Investigasi</th><th>Judul Kejadian</th><th>PIC</th><th>Due Date</th><th>Overdue</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>INV-2025-031</td><td>Conveyor Belt Fire</td><td>Operation</td><td>10 Mei 2025</td><td>15 hari</td><td><span class="badge badge-red">Overdue</span></td></tr>
+                <tr><td>2</td><td>INV-2025-028</td><td>Coal Mill Trip</td><td>Maintenance</td><td>12 Mei 2025</td><td>13 hari</td><td><span class="badge badge-red">Overdue</span></td></tr>
+                <tr><td>3</td><td>INV-2025-015</td><td>Fall from Height</td><td>Construction</td><td>20 Mei 2025</td><td>5 hari</td><td><span class="badge badge-red">Overdue</span></td></tr>
+                <tr><td>4</td><td>INV-2025-009</td><td>Electrical Short Circuit</td><td>Utilities</td><td>22 Mei 2025</td><td>3 hari</td><td><span class="badge badge-red">Overdue</span></td></tr>
+                <tr><td>5</td><td>INV-2025-007</td><td>Pump Seal Leak</td><td>Maintenance</td><td>25 Mei 2025</td><td>0 hari</td><td><span class="badge badge-today">Due Today</span></td></tr>
+              </tbody>
+            </table>
+            <a class="link-more" onclick="showPage('action',null)"><i class="ti ti-arrow-right"></i>Lihat Semua Overdue</a>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Action Effectiveness (Trend)</div>
+            <div style="position:relative;width:100%;height:165px"><canvas id="effectChart" role="img" aria-label="Trend action effectiveness vs target"></canvas></div>
+          </div>
+          <div class="table-card">
+            <div class="chart-title">Aktivitas Terbaru</div>
+            <div style="margin-top:4px">
+              <div class="activity-item"><div class="act-icon act-green"><i class="ti ti-check"></i></div><div><div class="act-text">Rekomendasi INV-2025-021 telah diverifikasi efektif</div><div class="act-meta">PIC: Maintenance | 20 Mei 2025 10:30</div></div></div>
+              <div class="activity-item"><div class="act-icon act-blue"><i class="ti ti-file-plus"></i></div><div><div class="act-text">Rekomendasi baru dibuat untuk INV-2025-032</div><div class="act-meta">PIC: Operation | 20 Mei 2025 09:15</div></div></div>
+              <div class="activity-item"><div class="act-icon act-orange"><i class="ti ti-clock"></i></div><div><div class="act-text">Rekomendasi INV-2025-018 sudah overdue 7 hari</div><div class="act-meta">PIC: Utilities | 19 Mei 2025 16:45</div></div></div>
+              <div class="activity-item"><div class="act-icon act-green"><i class="ti ti-check"></i></div><div><div class="act-text">Rekomendasi INV-2025-012 telah closed (efektif)</div><div class="act-meta">PIC: HSE | 19 Mei 2025 14:20</div></div></div>
+              <div class="activity-item"><div class="act-icon act-blue"><i class="ti ti-upload"></i></div><div><div class="act-text">Data investigasi Q1 berhasil diimport (42 records)</div><div class="act-meta">Admin IREM | 18 Mei 2025 08:00</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard-footer"><span>Semua data bersumber dari database IREM | Terakhir update: 20 Mei 2025 11:00</span><span>© 2025 IREM System</span></div>
+      </div>
+
+      <!-- ==================== INVESTIGASI ==================== -->
+      <div class="page-view" id="page-investigasi">
+        <div class="toolbar">
+          <button class="btn btn-primary" onclick="openModal('modal-add-inv')"><i class="ti ti-plus"></i>Tambah Investigasi</button>
+          <button class="btn" onclick="exportExcel('investigasi')"><i class="ti ti-file-spreadsheet" style="color:#16a34a"></i>Export Excel</button>
+          <button class="btn" onclick="exportPagePNG('page-investigasi')"><i class="ti ti-photo" style="color:#1a8fff"></i>Export PNG</button>
+          <button class="btn" onclick="exportPageJPG('page-investigasi')"><i class="ti ti-photo" style="color:#e8811a"></i>Export JPG</button>
+          <button class="btn" onclick="exportPDF('Investigasi')"><i class="ti ti-file-type-pdf" style="color:#dc2626"></i>Export PDF</button>
+          <button class="btn" onclick="triggerImport('import-inv')"><i class="ti ti-upload"></i>Import Excel</button>
+          <button class="btn" onclick="triggerImport('import-inv-img')"><i class="ti ti-photo"></i>Import Foto</button>
+          <input type="file" id="import-inv" style="display:none" accept=".xlsx,.xls,.csv" onchange="handleImportExcel(this,'investigasi')">
+          <input type="file" id="import-inv-img" style="display:none" accept=".jpg,.jpeg,.png" onchange="handleImportImg(this)">
+          <div class="search-box"><i class="ti ti-search"></i><input type="text" placeholder="Cari investigasi..." oninput="filterTable('inv-table-body',this.value)"></div>
+        </div>
+        <div class="table-card">
+          <div class="chart-title">Data Investigasi (128 Kejadian)</div>
+          <table>
+            <thead><tr><th>No</th><th>No. Investigasi</th><th>Tanggal</th><th>Judul Kejadian</th><th>Tipe</th><th>Severity</th><th>PIC</th><th>Status</th><th>Aksi</th></tr></thead>
+            <tbody id="inv-table-body">
+              <tr><td>1</td><td>INV-2025-031</td><td>01 Mei 2025</td><td>Conveyor Belt Fire</td><td><span class="badge badge-blue">Insiden</span></td><td><span class="badge badge-red">High</span></td><td>Operation</td><td><span class="badge badge-red">Overdue</span></td><td><button class="btn" onclick="editRow('Conveyor Belt Fire','Operation','Overdue','High','Insiden')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>2</td><td>INV-2025-028</td><td>28 Apr 2025</td><td>Coal Mill Trip</td><td><span class="badge badge-orange">Notif BPJS</span></td><td><span class="badge badge-yellow">Medium</span></td><td>Maintenance</td><td><span class="badge badge-blue">In Progress</span></td><td><button class="btn" onclick="editRow('Coal Mill Trip','Maintenance','In Progress','Medium','Notif BPJS')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>3</td><td>INV-2025-015</td><td>15 Apr 2025</td><td>Fall from Height</td><td><span class="badge badge-blue">Insiden</span></td><td><span class="badge badge-red">High</span></td><td>Construction</td><td><span class="badge badge-green">Closed</span></td><td><button class="btn" onclick="editRow('Fall from Height','Construction','Closed','High','Insiden')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>4</td><td>INV-2025-009</td><td>09 Apr 2025</td><td>Electrical Short Circuit</td><td><span class="badge badge-blue">Insiden</span></td><td><span class="badge badge-red">High</span></td><td>Utilities</td><td><span class="badge badge-red">Overdue</span></td><td><button class="btn" onclick="editRow('Electrical Short Circuit','Utilities','Overdue','High','Insiden')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>5</td><td>INV-2025-007</td><td>07 Apr 2025</td><td>Pump Seal Leak</td><td><span class="badge badge-orange">Notif BPJS</span></td><td><span class="badge badge-green">Low</span></td><td>Maintenance</td><td><span class="badge badge-blue">In Progress</span></td><td><button class="btn" onclick="editRow('Pump Seal Leak','Maintenance','In Progress','Low','Notif BPJS')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>6</td><td>INV-2025-003</td><td>03 Mar 2025</td><td>Chemical Spill Area B</td><td><span class="badge badge-blue">Insiden</span></td><td><span class="badge badge-red">High</span></td><td>HSE</td><td><span class="badge badge-green">Closed</span></td><td><button class="btn" onclick="editRow('Chemical Spill Area B','HSE','Closed','High','Insiden')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>7</td><td>INV-2025-001</td><td>15 Jan 2025</td><td>Forklift Near Miss</td><td><span class="badge badge-purple">Near Miss</span></td><td><span class="badge badge-yellow">Medium</span></td><td>Operation</td><td><span class="badge badge-green">Closed</span></td><td><button class="btn" onclick="editRow('Forklift Near Miss','Operation','Closed','Medium','Near Miss')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>8</td><td>INV-2024-128</td><td>20 Des 2024</td><td>Steam Pipe Rupture</td><td><span class="badge badge-orange">Notif BPJS</span></td><td><span class="badge badge-red">High</span></td><td>Maintenance</td><td><span class="badge badge-green">Closed</span></td><td><button class="btn" onclick="editRow('Steam Pipe Rupture','Maintenance','Closed','High','Notif BPJS')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>9</td><td>INV-2024-115</td><td>05 Nov 2024</td><td>Crane Wire Snap</td><td><span class="badge badge-blue">Insiden</span></td><td><span class="badge badge-red">High</span></td><td>Construction</td><td><span class="badge badge-green">Closed</span></td><td><button class="btn" onclick="editRow('Crane Wire Snap','Construction','Closed','High','Insiden')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>10</td><td>INV-2024-098</td><td>10 Sep 2024</td><td>Scaffold Collapse</td><td><span class="badge badge-blue">Insiden</span></td><td><span class="badge badge-yellow">Medium</span></td><td>Construction</td><td><span class="badge badge-blue">In Progress</span></td><td><button class="btn" onclick="editRow('Scaffold Collapse','Construction','In Progress','Medium','Insiden')"><i class="ti ti-edit"></i></button></td></tr>
+            </tbody>
+          </table>
+          <div class="pagination"><span>Menampilkan 10 dari 128 data</span><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button><span>... 13</span></div>
+        </div>
+      </div>
+
+      <!-- ==================== REKOMENDASI ==================== -->
+      <div class="page-view" id="page-rekomendasi">
+        <div class="toolbar">
+          <button class="btn btn-primary" onclick="openModal('modal-add-rek')"><i class="ti ti-plus"></i>Tambah Rekomendasi</button>
+          <button class="btn" onclick="exportExcel('rekomendasi')"><i class="ti ti-file-spreadsheet" style="color:#16a34a"></i>Export Excel</button>
+          <button class="btn" onclick="exportPagePNG('page-rekomendasi')"><i class="ti ti-photo" style="color:#1a8fff"></i>Export PNG</button>
+          <button class="btn" onclick="exportPageJPG('page-rekomendasi')"><i class="ti ti-photo" style="color:#e8811a"></i>Export JPG</button>
+          <button class="btn" onclick="exportPDF('Rekomendasi')"><i class="ti ti-file-type-pdf" style="color:#dc2626"></i>Export PDF</button>
+          <button class="btn" onclick="triggerImport('import-rek')"><i class="ti ti-upload"></i>Import Excel</button>
+          <input type="file" id="import-rek" style="display:none" accept=".xlsx,.xls,.csv" onchange="handleImportExcel(this,'rekomendasi')">
+          <div class="search-box"><i class="ti ti-search"></i><input type="text" placeholder="Cari rekomendasi..." oninput="filterTable('rek-table-body',this.value)"></div>
+        </div>
+        <div class="table-card">
+          <div class="chart-title">Data Rekomendasi (256 Rekomendasi)</div>
+          <table>
+            <thead><tr><th>No</th><th>No. Investigasi</th><th>Rekomendasi</th><th>PIC</th><th>Due Date</th><th>Prioritas</th><th>Status</th><th>Aksi</th></tr></thead>
+            <tbody id="rek-table-body">
+              <tr><td>1</td><td>INV-2025-031</td><td>Instalasi sistem deteksi api otomatis</td><td>Operation</td><td>31 Mei 2025</td><td><span class="badge badge-red">High</span></td><td><span class="badge badge-red">Overdue</span></td><td><button class="btn" onclick="editRek('Instalasi sistem deteksi api otomatis','Operation','Overdue','High')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>2</td><td>INV-2025-031</td><td>Pelatihan penanganan darurat kebakaran</td><td>HSE</td><td>15 Jun 2025</td><td><span class="badge badge-red">High</span></td><td><span class="badge badge-blue">In Progress</span></td><td><button class="btn" onclick="editRek('Pelatihan penanganan darurat kebakaran','HSE','In Progress','High')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>3</td><td>INV-2025-028</td><td>Perbaikan jadwal preventive maintenance coal mill</td><td>Maintenance</td><td>30 Jun 2025</td><td><span class="badge badge-yellow">Medium</span></td><td><span class="badge badge-blue">In Progress</span></td><td><button class="btn" onclick="editRek('Perbaikan jadwal preventive maintenance','Maintenance','In Progress','Medium')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>4</td><td>INV-2025-028</td><td>Kalibrasi sensor trip coal mill secara berkala</td><td>Maintenance</td><td>15 Jun 2025</td><td><span class="badge badge-yellow">Medium</span></td><td><span class="badge badge-orange">Open</span></td><td><button class="btn" onclick="editRek('Kalibrasi sensor trip coal mill','Maintenance','Open','Medium')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>5</td><td>INV-2025-015</td><td>Pelatihan safety bekerja di ketinggian</td><td>HSE</td><td>30 Jun 2025</td><td><span class="badge badge-red">High</span></td><td><span class="badge badge-green">Closed</span></td><td><button class="btn" onclick="editRek('Pelatihan safety bekerja di ketinggian','HSE','Closed','High')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>6</td><td>INV-2025-015</td><td>Penyediaan harness full body untuk semua area ketinggian</td><td>HSE</td><td>20 Mei 2025</td><td><span class="badge badge-red">High</span></td><td><span class="badge badge-green">Closed</span></td><td><button class="btn" onclick="editRek('Penyediaan harness full body','HSE','Closed','High')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>7</td><td>INV-2025-009</td><td>Audit instalasi listrik seluruh area pabrik</td><td>Utilities</td><td>22 Mei 2025</td><td><span class="badge badge-red">High</span></td><td><span class="badge badge-red">Overdue</span></td><td><button class="btn" onclick="editRek('Audit instalasi listrik','Utilities','Overdue','High')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>8</td><td>INV-2025-009</td><td>Pemasangan MCB dan ELCB di panel distribusi</td><td>Utilities</td><td>30 Jun 2025</td><td><span class="badge badge-red">High</span></td><td><span class="badge badge-blue">In Progress</span></td><td><button class="btn" onclick="editRek('Pemasangan MCB dan ELCB','Utilities','In Progress','High')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>9</td><td>INV-2025-007</td><td>Penggantian seal pompa yang sudah aus</td><td>Maintenance</td><td>25 Mei 2025</td><td><span class="badge badge-yellow">Medium</span></td><td><span class="badge badge-today">Due Today</span></td><td><button class="btn" onclick="editRek('Penggantian seal pompa','Maintenance','Due Today','Medium')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>10</td><td>INV-2024-128</td><td>Inspeksi rutin pipa steam setiap 3 bulan</td><td>Maintenance</td><td>01 Des 2024</td><td><span class="badge badge-red">High</span></td><td><span class="badge badge-green">Closed</span></td><td><button class="btn" onclick="editRek('Inspeksi rutin pipa steam','Maintenance','Closed','High')"><i class="ti ti-edit"></i></button></td></tr>
+            </tbody>
+          </table>
+          <div class="pagination"><span>Menampilkan 10 dari 256 data</span><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button><span>... 26</span></div>
+        </div>
+      </div>
+
+      <!-- ==================== ACTION TRACKING ==================== -->
+      <div class="page-view" id="page-action">
+        <div class="toolbar">
+          <button class="btn" onclick="exportExcel('action')"><i class="ti ti-file-spreadsheet" style="color:#16a34a"></i>Export Excel</button>
+          <button class="btn" onclick="exportPagePNG('page-action')"><i class="ti ti-photo" style="color:#1a8fff"></i>Export PNG</button>
+          <button class="btn" onclick="exportPDF('Action Tracking')"><i class="ti ti-file-type-pdf" style="color:#dc2626"></i>Export PDF</button>
+          <div class="search-box"><i class="ti ti-search"></i><input type="text" placeholder="Cari action..." oninput="filterTable('action-table-body',this.value)"></div>
+        </div>
+        <div class="stat-mini-grid" style="max-width:500px">
+          <div class="stat-mini"><div class="val" style="color:#dc2626">18</div><div class="lbl">Overdue</div></div>
+          <div class="stat-mini"><div class="val" style="color:#e8811a">78</div><div class="lbl">In Progress</div></div>
+          <div class="stat-mini"><div class="val" style="color:#16a34a">141</div><div class="lbl">Closed</div></div>
+        </div>
+        <div class="table-card">
+          <div class="chart-title">Action Tracking — Semua Rekomendasi <span class="overdue-badge">18 Overdue</span></div>
+          <table>
+            <thead><tr><th>No</th><th>No. Investigasi</th><th>Judul Kejadian</th><th>Rekomendasi</th><th>PIC</th><th>Due Date</th><th>Overdue (Hari)</th><th>Status</th><th>Aksi</th></tr></thead>
+            <tbody id="action-table-body">
+              <tr><td>1</td><td>INV-2025-031</td><td>Conveyor Belt Fire</td><td>Instalasi sistem deteksi api</td><td>Operation</td><td>10 Mei 2025</td><td style="color:#dc2626;font-weight:700">15</td><td><span class="badge badge-red">Overdue</span></td><td><button class="btn" onclick="editAction('Conveyor Belt Fire','Operation','Overdue')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>2</td><td>INV-2025-028</td><td>Coal Mill Trip</td><td>Perbaikan jadwal maintenance</td><td>Maintenance</td><td>12 Mei 2025</td><td style="color:#dc2626;font-weight:700">13</td><td><span class="badge badge-red">Overdue</span></td><td><button class="btn" onclick="editAction('Coal Mill Trip','Maintenance','Overdue')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>3</td><td>INV-2025-015</td><td>Fall from Height</td><td>Audit scaffold & platform</td><td>Construction</td><td>20 Mei 2025</td><td style="color:#dc2626;font-weight:700">5</td><td><span class="badge badge-red">Overdue</span></td><td><button class="btn" onclick="editAction('Fall from Height','Construction','Overdue')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>4</td><td>INV-2025-009</td><td>Electrical Short Circuit</td><td>Audit instalasi listrik</td><td>Utilities</td><td>22 Mei 2025</td><td style="color:#dc2626;font-weight:700">3</td><td><span class="badge badge-red">Overdue</span></td><td><button class="btn" onclick="editAction('Electrical Short Circuit','Utilities','Overdue')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>5</td><td>INV-2025-007</td><td>Pump Seal Leak</td><td>Penggantian seal pompa</td><td>Maintenance</td><td>25 Mei 2025</td><td>0</td><td><span class="badge badge-today">Due Today</span></td><td><button class="btn" onclick="editAction('Pump Seal Leak','Maintenance','Due Today')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>6</td><td>INV-2025-031</td><td>Conveyor Belt Fire</td><td>Pelatihan darurat kebakaran</td><td>HSE</td><td>30 Jun 2025</td><td>—</td><td><span class="badge badge-blue">In Progress</span></td><td><button class="btn" onclick="editAction('Conveyor Belt Fire - Pelatihan','HSE','In Progress')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>7</td><td>INV-2025-028</td><td>Coal Mill Trip</td><td>Kalibrasi sensor trip</td><td>Maintenance</td><td>15 Jun 2025</td><td>—</td><td><span class="badge badge-orange">Open</span></td><td><button class="btn" onclick="editAction('Coal Mill Trip - Kalibrasi','Maintenance','Open')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>8</td><td>INV-2025-009</td><td>Electrical Short Circuit</td><td>Pemasangan MCB & ELCB</td><td>Utilities</td><td>30 Jun 2025</td><td>—</td><td><span class="badge badge-blue">In Progress</span></td><td><button class="btn" onclick="editAction('Electrical - MCB ELCB','Utilities','In Progress')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>9</td><td>INV-2025-015</td><td>Fall from Height</td><td>Pelatihan kerja di ketinggian</td><td>HSE</td><td>30 Jun 2025</td><td>—</td><td><span class="badge badge-green">Closed</span></td><td><button class="btn" onclick="editAction('Fall from Height - Pelatihan','HSE','Closed')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>10</td><td>INV-2024-128</td><td>Steam Pipe Rupture</td><td>Inspeksi rutin pipa steam</td><td>Maintenance</td><td>01 Des 2024</td><td>—</td><td><span class="badge badge-green">Closed</span></td><td><button class="btn" onclick="editAction('Steam Pipe - Inspeksi','Maintenance','Closed')"><i class="ti ti-edit"></i></button></td></tr>
+            </tbody>
+          </table>
+          <div class="pagination"><span>Menampilkan 10 dari 256 data</span><button class="page-btn active">1</button><button class="page-btn">2</button></div>
+        </div>
+      </div>
+
+      <!-- ==================== VERIFIKASI EFEKTIVITAS ==================== -->
+      <div class="page-view" id="page-verifikasi">
+        <div class="toolbar">
+          <button class="btn btn-primary" onclick="openModal('modal-add-verif')"><i class="ti ti-plus"></i>Tambah Verifikasi</button>
+          <button class="btn" onclick="exportExcel('verifikasi')"><i class="ti ti-file-spreadsheet" style="color:#16a34a"></i>Export Excel</button>
+          <button class="btn" onclick="exportPagePNG('page-verifikasi')"><i class="ti ti-photo" style="color:#1a8fff"></i>Export PNG</button>
+          <button class="btn" onclick="exportPDF('Verifikasi')"><i class="ti ti-file-type-pdf" style="color:#dc2626"></i>Export PDF</button>
+          <button class="btn" onclick="triggerImport('import-foto-verif')"><i class="ti ti-upload"></i>Import Foto Bukti</button>
+          <input type="file" id="import-foto-verif" style="display:none" accept=".jpg,.jpeg,.png" onchange="handleImportImg(this)">
+          <div class="search-box"><i class="ti ti-search"></i><input type="text" placeholder="Cari verifikasi..." oninput="filterTable('verif-table-body',this.value)"></div>
+        </div>
+        <div class="stat-mini-grid" style="max-width:400px">
+          <div class="stat-mini"><div class="val" style="color:#16a34a">82%</div><div class="lbl">Effectiveness Rate</div></div>
+          <div class="stat-mini"><div class="val" style="color:#16a34a">94</div><div class="lbl">Efektif</div></div>
+          <div class="stat-mini"><div class="val" style="color:#dc2626">22</div><div class="lbl">Belum Efektif</div></div>
+        </div>
+        <div class="table-card">
+          <div class="chart-title">Data Verifikasi Efektivitas (116 Terverifikasi)</div>
+          <table>
+            <thead><tr><th>No</th><th>No. Investigasi</th><th>Rekomendasi</th><th>Verifikator</th><th>Tanggal Verifikasi</th><th>Bukti Foto</th><th>Hasil</th><th>Catatan</th><th>Aksi</th></tr></thead>
+            <tbody id="verif-table-body">
+              <tr><td>1</td><td>INV-2025-021</td><td>Perbaikan seal pompa unit 3</td><td>HSE</td><td>20 Mei 2025</td><td><span class="badge badge-green">Ada</span></td><td><span class="badge badge-green">Efektif</span></td><td>Seal terpasang baik, tidak ada kebocoran</td><td><button class="btn" onclick="openModal('modal-add-verif')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>2</td><td>INV-2025-012</td><td>Revisi prosedur kerja listrik</td><td>HSE</td><td>19 Mei 2025</td><td><span class="badge badge-green">Ada</span></td><td><span class="badge badge-green">Efektif</span></td><td>SOP baru telah disosialisasikan</td><td><button class="btn" onclick="openModal('modal-add-verif')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>3</td><td>INV-2025-010</td><td>Pengadaan APD lengkap area C</td><td>HSE</td><td>17 Mei 2025</td><td><span class="badge badge-red">Tidak Ada</span></td><td><span class="badge badge-yellow">Belum Efektif</span></td><td>APD masih kurang dari kebutuhan</td><td><button class="btn" onclick="openModal('modal-add-verif')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>4</td><td>INV-2025-015</td><td>Penyediaan harness full body</td><td>Construction</td><td>15 Mei 2025</td><td><span class="badge badge-green">Ada</span></td><td><span class="badge badge-green">Efektif</span></td><td>Seluruh pekerja ketinggian sudah menggunakan harness</td><td><button class="btn" onclick="openModal('modal-add-verif')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>5</td><td>INV-2024-128</td><td>Inspeksi rutin pipa steam</td><td>Maintenance</td><td>05 Jan 2025</td><td><span class="badge badge-green">Ada</span></td><td><span class="badge badge-green">Efektif</span></td><td>Jadwal inspeksi berjalan, tidak ada kebocoran baru</td><td><button class="btn" onclick="openModal('modal-add-verif')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>6</td><td>INV-2024-115</td><td>Penggantian wire rope crane</td><td>Construction</td><td>20 Des 2024</td><td><span class="badge badge-green">Ada</span></td><td><span class="badge badge-green">Efektif</span></td><td>Wire rope baru terpasang, uji beban OK</td><td><button class="btn" onclick="openModal('modal-add-verif')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>7</td><td>INV-2024-098</td><td>Redesain scaffold platform</td><td>Construction</td><td>10 Nov 2024</td><td><span class="badge badge-red">Tidak Ada</span></td><td><span class="badge badge-yellow">Belum Efektif</span></td><td>Masih dalam proses redesain oleh kontraktor</td><td><button class="btn" onclick="openModal('modal-add-verif')"><i class="ti ti-edit"></i></button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== REPEAT ROOT CAUSE ==================== -->
+      <div class="page-view" id="page-rootcause">
+        <div class="toolbar">
+          <button class="btn" onclick="exportExcel('rootcause')"><i class="ti ti-file-spreadsheet" style="color:#16a34a"></i>Export Excel</button>
+          <button class="btn" onclick="exportPagePNG('page-rootcause')"><i class="ti ti-photo" style="color:#1a8fff"></i>Export PNG</button>
+          <button class="btn" onclick="exportPDF('Root Cause')"><i class="ti ti-file-type-pdf" style="color:#dc2626"></i>Export PDF</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:12px">
+          <div class="table-card">
+            <div class="chart-title">Top Root Cause yang Berulang</div>
+            <table>
+              <thead><tr><th>Rank</th><th>Root Cause</th><th>Frekuensi</th><th>% Total</th><th>Departemen Terdampak</th></tr></thead>
+              <tbody id="rc-table-body">
+                <tr><td><span class="badge badge-red">1</span></td><td>Weak Supervision</td><td>21</td><td>33%</td><td>Operation, Construction</td></tr>
+                <tr><td><span class="badge badge-orange">2</span></td><td>Poor Maintenance Planning</td><td>17</td><td>27%</td><td>Maintenance</td></tr>
+                <tr><td><span class="badge badge-orange">3</span></td><td>SOP Not Followed</td><td>13</td><td>20%</td><td>All Dept</td></tr>
+                <tr><td><span class="badge badge-yellow">4</span></td><td>Inadequate Training</td><td>8</td><td>13%</td><td>HSE, Operation</td></tr>
+                <tr><td><span class="badge badge-green">5</span></td><td>Communication Failure</td><td>5</td><td>8%</td><td>All Dept</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Distribusi Root Cause (Pareto)</div>
+            <div style="position:relative;height:220px"><canvas id="rootChart" role="img" aria-label="Pareto chart repeat root cause"></canvas></div>
+          </div>
+        </div>
+        <div class="table-card" style="margin-top:12px">
+          <div class="chart-title">Detail Repeat Incident per Root Cause</div>
+          <table>
+            <thead><tr><th>Root Cause</th><th>No. Investigasi Berulang</th><th>Judul Kejadian</th><th>Tgl Pertama</th><th>Tgl Terakhir</th><th>Frekuensi</th></tr></thead>
+            <tbody>
+              <tr><td>Weak Supervision</td><td>INV-2025-031</td><td>Conveyor Belt Fire</td><td>Mar 2024</td><td>Mei 2025</td><td>3x</td></tr>
+              <tr><td>SOP Not Followed</td><td>INV-2025-015</td><td>Fall from Height</td><td>Jun 2024</td><td>Apr 2025</td><td>2x</td></tr>
+              <tr><td>Poor Maintenance Planning</td><td>INV-2025-028</td><td>Coal Mill Trip</td><td>Agt 2024</td><td>Apr 2025</td><td>3x</td></tr>
+              <tr><td>Communication Failure</td><td>INV-2024-098</td><td>Scaffold Collapse</td><td>Jan 2024</td><td>Sep 2024</td><td>2x</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== LAPORAN ==================== -->
+      <div class="page-view" id="page-laporan">
+        <div class="toolbar">
+          <button class="btn btn-primary" onclick="openModal('modal-laporan')"><i class="ti ti-plus"></i>Buat Laporan</button>
+          <button class="btn" onclick="exportExcel('laporan')"><i class="ti ti-file-spreadsheet" style="color:#16a34a"></i>Export Excel</button>
+          <button class="btn" onclick="exportPDF('Laporan')"><i class="ti ti-file-type-pdf" style="color:#dc2626"></i>Export PDF</button>
+          <button class="btn" onclick="exportPagePNG('page-laporan')"><i class="ti ti-photo" style="color:#1a8fff"></i>Export PNG/JPG</button>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-btn active" onclick="switchTab('tab-daftar',this)">Daftar Laporan</div>
+          <div class="tab-btn" onclick="switchTab('tab-bulanan',this)">Laporan Bulanan</div>
+          <div class="tab-btn" onclick="switchTab('tab-kuartalan',this)">Laporan Kuartalan</div>
+        </div>
+        <div class="tab-content active" id="tab-daftar">
+          <div class="table-card">
+            <div class="chart-title">Daftar Laporan</div>
+            <table>
+              <thead><tr><th>No</th><th>Judul Laporan</th><th>Tipe</th><th>Periode</th><th>Dibuat Oleh</th><th>Tanggal Dibuat</th><th>Format</th><th>Aksi</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>Laporan Bulanan HSE - Mei 2025</td><td><span class="badge badge-blue">Bulanan</span></td><td>Mei 2025</td><td>Admin IREM</td><td>01 Jun 2025</td><td>PDF</td><td><button class="btn" onclick="showToast('Mengunduh laporan...')"><i class="ti ti-download"></i></button></td></tr>
+                <tr><td>2</td><td>Laporan Investigasi Q1 2025</td><td><span class="badge badge-purple">Kuartalan</span></td><td>Jan–Mar 2025</td><td>Admin IREM</td><td>05 Apr 2025</td><td>Excel</td><td><button class="btn" onclick="showToast('Mengunduh laporan...')"><i class="ti ti-download"></i></button></td></tr>
+                <tr><td>3</td><td>Rekapitulasi Overdue Rekomendasi</td><td><span class="badge badge-orange">Khusus</span></td><td>Jan–Mei 2025</td><td>Admin IREM</td><td>20 Mei 2025</td><td>PDF</td><td><button class="btn" onclick="showToast('Mengunduh laporan...')"><i class="ti ti-download"></i></button></td></tr>
+                <tr><td>4</td><td>Action Effectiveness Report Q4 2024</td><td><span class="badge badge-purple">Kuartalan</span></td><td>Okt–Des 2024</td><td>Admin IREM</td><td>10 Jan 2025</td><td>PDF</td><td><button class="btn" onclick="showToast('Mengunduh laporan...')"><i class="ti ti-download"></i></button></td></tr>
+                <tr><td>5</td><td>Laporan Tahunan HSE 2024</td><td><span class="badge badge-gray">Tahunan</span></td><td>Jan–Des 2024</td><td>Admin IREM</td><td>15 Jan 2025</td><td>PDF</td><td><button class="btn" onclick="showToast('Mengunduh laporan...')"><i class="ti ti-download"></i></button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="tab-content" id="tab-bulanan">
+          <div class="chart-card">
+            <div class="chart-title">Ringkasan Laporan Bulanan — Mei 2025</div>
+            <div class="stat-mini-grid">
+              <div class="stat-mini"><div class="val">6</div><div class="lbl">Total Investigasi</div></div>
+              <div class="stat-mini"><div class="val">18</div><div class="lbl">Rekomendasi Baru</div></div>
+              <div class="stat-mini"><div class="val">87%</div><div class="lbl">Closure Rate</div></div>
+            </div>
+            <div style="position:relative;height:180px"><canvas id="bulananChart" role="img" aria-label="Trend bulanan Jan - Mei 2025"></canvas></div>
+          </div>
+        </div>
+        <div class="tab-content" id="tab-kuartalan">
+          <div class="chart-card">
+            <div class="chart-title">Laporan Kuartalan — Q1 & Q2 2025</div>
+            <div class="stat-mini-grid">
+              <div class="stat-mini"><div class="val">38</div><div class="lbl">Investigasi Q1</div></div>
+              <div class="stat-mini"><div class="val">22</div><div class="lbl">Investigasi Q2</div></div>
+              <div class="stat-mini"><div class="val">84%</div><div class="lbl">Effectiveness Q1</div></div>
+            </div>
+            <div style="position:relative;height:180px"><canvas id="kuartalChart" role="img" aria-label="Perbandingan Q1 vs Q2 2025"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== MASTER DEPT ==================== -->
+      <div class="page-view" id="page-master-dept">
+        <div class="toolbar">
+          <button class="btn btn-primary" onclick="openModal('modal-add-dept')"><i class="ti ti-plus"></i>Tambah Departemen</button>
+          <button class="btn" onclick="exportExcel('departemen')"><i class="ti ti-file-spreadsheet" style="color:#16a34a"></i>Export Excel</button>
+          <button class="btn" onclick="triggerImport('import-dept')"><i class="ti ti-upload"></i>Import</button>
+          <input type="file" id="import-dept" style="display:none" accept=".xlsx,.xls,.csv" onchange="handleImportExcel(this,'departemen')">
+        </div>
+        <div class="table-card">
+          <div class="chart-title">Master Data — Departemen</div>
+          <table>
+            <thead><tr><th>No</th><th>Kode</th><th>Nama Departemen</th><th>PIC</th><th>Email</th><th>Jumlah Investigasi</th><th>Aksi</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>OPS</td><td>Operation</td><td>Budi Santoso</td><td>ops@irem.co.id</td><td>42</td><td><button class="btn" onclick="openModal('modal-edit-dept')"><i class="ti ti-edit"></i></button>&nbsp;<button class="btn btn-danger" onclick="confirmDelete('departemen Operation')"><i class="ti ti-trash"></i></button></td></tr>
+              <tr><td>2</td><td>MNT</td><td>Maintenance</td><td>Agus Setiawan</td><td>maintenance@irem.co.id</td><td>38</td><td><button class="btn" onclick="openModal('modal-edit-dept')"><i class="ti ti-edit"></i></button>&nbsp;<button class="btn btn-danger" onclick="confirmDelete('departemen Maintenance')"><i class="ti ti-trash"></i></button></td></tr>
+              <tr><td>3</td><td>HSE</td><td>HSE Department</td><td>Admin IREM</td><td>hse@irem.co.id</td><td>20</td><td><button class="btn" onclick="openModal('modal-edit-dept')"><i class="ti ti-edit"></i></button>&nbsp;<button class="btn btn-danger" onclick="confirmDelete('departemen HSE')"><i class="ti ti-trash"></i></button></td></tr>
+              <tr><td>4</td><td>UTL</td><td>Utilities</td><td>Denny Wahyu</td><td>utilities@irem.co.id</td><td>16</td><td><button class="btn" onclick="openModal('modal-edit-dept')"><i class="ti ti-edit"></i></button>&nbsp;<button class="btn btn-danger" onclick="confirmDelete('departemen Utilities')"><i class="ti ti-trash"></i></button></td></tr>
+              <tr><td>5</td><td>CON</td><td>Construction</td><td>Rudi Prasetyo</td><td>construction@irem.co.id</td><td>12</td><td><button class="btn" onclick="openModal('modal-edit-dept')"><i class="ti ti-edit"></i></button>&nbsp;<button class="btn btn-danger" onclick="confirmDelete('departemen Construction')"><i class="ti ti-trash"></i></button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== MASTER TIPE ==================== -->
+      <div class="page-view" id="page-master-tipe">
+        <div class="toolbar">
+          <button class="btn btn-primary" onclick="openModal('modal-add-tipe')"><i class="ti ti-plus"></i>Tambah Tipe</button>
+          <button class="btn" onclick="exportExcel('tipe-kejadian')"><i class="ti ti-file-spreadsheet" style="color:#16a34a"></i>Export Excel</button>
+        </div>
+        <div class="table-card">
+          <div class="chart-title">Master Data — Tipe Kejadian</div>
+          <table>
+            <thead><tr><th>No</th><th>Kode</th><th>Tipe Kejadian</th><th>Keterangan</th><th>Warna Label</th><th>Aktif</th><th>Aksi</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>INC</td><td>Kejadian Insiden</td><td>Insiden kerja yang memerlukan investigasi penuh</td><td><span class="badge badge-blue">Biru</span></td><td><span class="badge badge-green">Aktif</span></td><td><button class="btn" onclick="openModal('modal-edit-tipe')"><i class="ti ti-edit"></i></button>&nbsp;<button class="btn btn-danger" onclick="confirmDelete('tipe Insiden')"><i class="ti ti-trash"></i></button></td></tr>
+              <tr><td>2</td><td>BPJS</td><td>Notifikasi BPJS</td><td>Laporan kecelakaan kerja yang harus dilaporkan ke BPJS TK</td><td><span class="badge badge-orange">Oranye</span></td><td><span class="badge badge-green">Aktif</span></td><td><button class="btn" onclick="openModal('modal-edit-tipe')"><i class="ti ti-edit"></i></button>&nbsp;<button class="btn btn-danger" onclick="confirmDelete('tipe BPJS')"><i class="ti ti-trash"></i></button></td></tr>
+              <tr><td>3</td><td>NM</td><td>Near Miss</td><td>Kejadian hampir celaka tanpa korban</td><td><span class="badge badge-purple">Ungu</span></td><td><span class="badge badge-green">Aktif</span></td><td><button class="btn" onclick="openModal('modal-edit-tipe')"><i class="ti ti-edit"></i></button>&nbsp;<button class="btn btn-danger" onclick="confirmDelete('tipe Near Miss')"><i class="ti ti-trash"></i></button></td></tr>
+              <tr><td>4</td><td>UNS</td><td>Unsafe Act/Condition</td><td>Tindakan atau kondisi tidak aman yang dilaporkan</td><td><span class="badge badge-yellow">Kuning</span></td><td><span class="badge badge-green">Aktif</span></td><td><button class="btn" onclick="openModal('modal-edit-tipe')"><i class="ti ti-edit"></i></button>&nbsp;<button class="btn btn-danger" onclick="confirmDelete('tipe Unsafe')"><i class="ti ti-trash"></i></button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== MASTER USER ==================== -->
+      <div class="page-view" id="page-master-user">
+        <div class="toolbar">
+          <button class="btn btn-primary" onclick="openModal('modal-add-user')"><i class="ti ti-plus"></i>Tambah Pengguna</button>
+          <button class="btn" onclick="exportExcel('pengguna')"><i class="ti ti-file-spreadsheet" style="color:#16a34a"></i>Export Excel</button>
+          <button class="btn" onclick="triggerImport('import-user')"><i class="ti ti-upload"></i>Import</button>
+          <input type="file" id="import-user" style="display:none" accept=".xlsx,.xls,.csv" onchange="handleImportExcel(this,'pengguna')">
+        </div>
+        <div class="table-card">
+          <div class="chart-title">Master Data — Pengguna Sistem</div>
+          <table>
+            <thead><tr><th>No</th><th>Nama</th><th>Email</th><th>Departemen</th><th>Role</th><th>Terakhir Login</th><th>Status</th><th>Aksi</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>Admin IREM</td><td>admin@irem.co.id</td><td>HSE</td><td><span class="badge badge-purple">Admin</span></td><td>20 Mei 2025 11:00</td><td><span class="badge badge-green">Aktif</span></td><td><button class="btn" onclick="openModal('modal-edit-user')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>2</td><td>Budi Santoso</td><td>budi@irem.co.id</td><td>Operation</td><td><span class="badge badge-blue">PIC</span></td><td>19 Mei 2025 14:30</td><td><span class="badge badge-green">Aktif</span></td><td><button class="btn" onclick="openModal('modal-edit-user')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>3</td><td>Agus Setiawan</td><td>agus@irem.co.id</td><td>Maintenance</td><td><span class="badge badge-blue">PIC</span></td><td>20 Mei 2025 09:00</td><td><span class="badge badge-green">Aktif</span></td><td><button class="btn" onclick="openModal('modal-edit-user')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>4</td><td>Denny Wahyu</td><td>denny@irem.co.id</td><td>Utilities</td><td><span class="badge badge-blue">PIC</span></td><td>18 Mei 2025 16:00</td><td><span class="badge badge-green">Aktif</span></td><td><button class="btn" onclick="openModal('modal-edit-user')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>5</td><td>Rudi Prasetyo</td><td>rudi@irem.co.id</td><td>Construction</td><td><span class="badge badge-blue">PIC</span></td><td>17 Mei 2025 10:15</td><td><span class="badge badge-green">Aktif</span></td><td><button class="btn" onclick="openModal('modal-edit-user')"><i class="ti ti-edit"></i></button></td></tr>
+              <tr><td>6</td><td>Siti Rahayu</td><td>siti@irem.co.id</td><td>HSE</td><td><span class="badge badge-gray">Viewer</span></td><td>10 Mei 2025 08:30</td><td><span class="badge badge-yellow">Nonaktif</span></td><td><button class="btn" onclick="openModal('modal-edit-user')"><i class="ti ti-edit"></i></button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== PENGATURAN ==================== -->
+      <div class="page-view" id="page-pengaturan">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:900px">
+          <div class="settings-card">
+            <div class="settings-section-title"><i class="ti ti-building"></i> Informasi Organisasi</div>
+            <div class="form-group"><label class="form-label">Nama Organisasi</label><input class="form-control" value="PT. IREM Indonesia"></div>
+            <div class="form-group"><label class="form-label">Alamat</label><input class="form-control" value="Jl. Industri No.1, Jakarta"></div>
+            <div class="form-group"><label class="form-label">Logo Perusahaan</label><button class="btn" onclick="triggerImport('import-logo')"><i class="ti ti-upload"></i>Upload Logo (PNG/JPG)</button><input type="file" id="import-logo" style="display:none" accept=".png,.jpg,.jpeg" onchange="handleImportImg(this)"></div>
+            <button class="btn btn-primary" onclick="showToast('Informasi organisasi berhasil disimpan.')"><i class="ti ti-device-floppy"></i>Simpan</button>
+          </div>
+          <div class="settings-card">
+            <div class="settings-section-title"><i class="ti ti-target"></i> Target & KPI</div>
+            <div class="form-group"><label class="form-label">Target Closure Rate (%)</label><input class="form-control" type="number" value="90"></div>
+            <div class="form-group"><label class="form-label">Target Action Effectiveness (%)</label><input class="form-control" type="number" value="85"></div>
+            <div class="form-group"><label class="form-label">Batas Hari Overdue</label><input class="form-control" type="number" value="0"></div>
+            <button class="btn btn-primary" onclick="showToast('Target KPI berhasil disimpan.')"><i class="ti ti-device-floppy"></i>Simpan</button>
+          </div>
+          <div class="settings-card">
+            <div class="settings-section-title"><i class="ti ti-bell"></i> Notifikasi</div>
+            <div class="form-group"><label class="form-label">Email Notifikasi Overdue</label><input class="form-control" type="email" value="hse@irem.co.id"></div>
+            <div class="form-group"><label class="form-label">Email CC</label><input class="form-control" type="email" value="manajemen@irem.co.id"></div>
+            <div class="form-group"><label class="form-label">Frekuensi Reminder</label><select class="form-control"><option>Harian</option><option>Mingguan</option><option selected>Setiap hari kerja</option></select></div>
+            <button class="btn btn-primary" onclick="showToast('Pengaturan notifikasi berhasil disimpan.')"><i class="ti ti-device-floppy"></i>Simpan</button>
+          </div>
+          <div class="settings-card">
+            <div class="settings-section-title"><i class="ti ti-adjustments"></i> Preferensi Sistem</div>
+            <div class="form-group"><label class="form-label">Bahasa</label><select class="form-control"><option selected>Bahasa Indonesia</option><option>English</option></select></div>
+            <div class="form-group"><label class="form-label">Zona Waktu</label><select class="form-control"><option selected>WIB (UTC+7)</option><option>WITA (UTC+8)</option><option>WIT (UTC+9)</option></select></div>
+            <div class="form-group"><label class="form-label">Format Tanggal</label><select class="form-control"><option selected>DD MMM YYYY</option><option>YYYY-MM-DD</option><option>MM/DD/YYYY</option></select></div>
+            <button class="btn btn-primary" onclick="showToast('Preferensi sistem berhasil disimpan.')"><i class="ti ti-device-floppy"></i>Simpan</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ==================== MODALS ==================== -->
+<div class="modal-overlay" id="modal-add-inv" onclick="closeModalOuter(event,'modal-add-inv')">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Tambah Investigasi Baru</span><i class="ti ti-x" style="cursor:pointer;font-size:18px" onclick="closeModal('modal-add-inv')"></i></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">No. Investigasi</label><input class="form-control" id="inv-nomor" placeholder="INV-2025-xxx"></div><div class="form-group"><label class="form-label">Tanggal Kejadian</label><input class="form-control" id="inv-tgl" type="date"></div></div>
+    <div class="form-group"><label class="form-label">Judul Kejadian</label><input class="form-control" id="inv-judul" placeholder="Deskripsikan singkat kejadian..."></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Tipe Kejadian</label><select class="form-control" id="inv-tipe"><option>Kejadian Insiden</option><option>Notifikasi BPJS</option><option>Near Miss</option><option>Unsafe Act/Condition</option></select></div><div class="form-group"><label class="form-label">Severity</label><select class="form-control" id="inv-sev"><option>High</option><option>Medium</option><option>Low</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">PIC</label><select class="form-control" id="inv-pic"><option>Operation</option><option>Maintenance</option><option>HSE</option><option>Utilities</option><option>Construction</option></select></div><div class="form-group"><label class="form-label">Lokasi</label><input class="form-control" placeholder="Area/lokasi kejadian"></div></div>
+    <div class="form-group"><label class="form-label">Deskripsi Kejadian</label><textarea class="form-control" rows="3" placeholder="Deskripsi lengkap kejadian..."></textarea></div>
+    <div class="form-group"><label class="form-label">Upload Foto Bukti</label><button class="btn" onclick="triggerImport('inv-foto')"><i class="ti ti-photo"></i>Pilih Foto (JPG/PNG)</button><input type="file" id="inv-foto" style="display:none" accept=".jpg,.jpeg,.png" onchange="handleImportImg(this)"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveInvestigasi()"><i class="ti ti-device-floppy"></i>Simpan Investigasi</button>
+      <button class="btn" onclick="closeModal('modal-add-inv')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-rek" onclick="closeModalOuter(event,'modal-add-rek')">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Tambah Rekomendasi</span><i class="ti ti-x" style="cursor:pointer;font-size:18px" onclick="closeModal('modal-add-rek')"></i></div>
+    <div class="form-group"><label class="form-label">No. Investigasi Terkait</label><select class="form-control"><option>INV-2025-031 — Conveyor Belt Fire</option><option>INV-2025-028 — Coal Mill Trip</option><option>INV-2025-015 — Fall from Height</option><option>INV-2025-009 — Electrical Short Circuit</option><option>INV-2025-007 — Pump Seal Leak</option></select></div>
+    <div class="form-group"><label class="form-label">Rekomendasi</label><textarea class="form-control" rows="3" placeholder="Deskripsi rekomendasi tindakan perbaikan..."></textarea></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">PIC</label><select class="form-control"><option>Operation</option><option>Maintenance</option><option>HSE</option><option>Utilities</option><option>Construction</option></select></div><div class="form-group"><label class="form-label">Due Date</label><input class="form-control" type="date"></div></div>
+    <div class="form-group"><label class="form-label">Prioritas</label><select class="form-control"><option>High</option><option>Medium</option><option>Low</option></select></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="showToast('Rekomendasi berhasil disimpan.');closeModal('modal-add-rek')"><i class="ti ti-device-floppy"></i>Simpan</button>
+      <button class="btn" onclick="closeModal('modal-add-rek')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-edit-row" onclick="closeModalOuter(event,'modal-edit-row')">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title" id="edit-row-title">Edit Data</span><i class="ti ti-x" style="cursor:pointer;font-size:18px" onclick="closeModal('modal-edit-row')"></i></div>
+    <div class="form-group"><label class="form-label">Judul Kejadian</label><input class="form-control" id="edit-judul"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">PIC</label><select class="form-control" id="edit-pic"><option>Operation</option><option>Maintenance</option><option>HSE</option><option>Utilities</option><option>Construction</option></select></div>
+      <div class="form-group"><label class="form-label">Status</label><select class="form-control" id="edit-status"><option>Open</option><option>In Progress</option><option>Closed</option><option>Overdue</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Severity</label><select class="form-control" id="edit-sev"><option>High</option><option>Medium</option><option>Low</option></select></div>
+      <div class="form-group"><label class="form-label">Tipe</label><select class="form-control" id="edit-tipe"><option>Kejadian Insiden</option><option>Notifikasi BPJS</option><option>Near Miss</option></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Catatan Update</label><textarea class="form-control" rows="2" placeholder="Catatan perubahan..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="showToast('Data berhasil diupdate.');closeModal('modal-edit-row')"><i class="ti ti-device-floppy"></i>Update</button>
+      <button class="btn btn-danger" onclick="closeModal('modal-edit-row');confirmDelete('data ini')"><i class="ti ti-trash"></i>Hapus</button>
+      <button class="btn" onclick="closeModal('modal-edit-row')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-verif" onclick="closeModalOuter(event,'modal-add-verif')">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Verifikasi Efektivitas</span><i class="ti ti-x" style="cursor:pointer;font-size:18px" onclick="closeModal('modal-add-verif')"></i></div>
+    <div class="form-group"><label class="form-label">No. Investigasi</label><select class="form-control"><option>INV-2025-021 — Pump Seal Unit 3</option><option>INV-2025-015 — Fall from Height</option><option>INV-2025-012 — Electrical Safety</option></select></div>
+    <div class="form-group"><label class="form-label">Rekomendasi yang Diverifikasi</label><select class="form-control"><option>Perbaikan seal pompa unit 3</option><option>Pelatihan kerja di ketinggian</option><option>Revisi prosedur kerja listrik</option></select></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Verifikator</label><input class="form-control" value="HSE"></div><div class="form-group"><label class="form-label">Tanggal Verifikasi</label><input class="form-control" type="date"></div></div>
+    <div class="form-group"><label class="form-label">Hasil Verifikasi</label><select class="form-control"><option>Efektif</option><option>Belum Efektif</option><option>Perlu Tindak Lanjut</option></select></div>
+    <div class="form-group"><label class="form-label">Catatan</label><textarea class="form-control" rows="2" placeholder="Hasil verifikasi lapangan..."></textarea></div>
+    <div class="form-group"><label class="form-label">Foto Bukti</label><button class="btn" onclick="triggerImport('verif-foto-upload')"><i class="ti ti-photo"></i>Upload Foto Bukti (JPG/PNG)</button><input type="file" id="verif-foto-upload" style="display:none" accept=".jpg,.jpeg,.png" onchange="handleImportImg(this)"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="showToast('Verifikasi berhasil disimpan.');closeModal('modal-add-verif')"><i class="ti ti-device-floppy"></i>Simpan Verifikasi</button>
+      <button class="btn" onclick="closeModal('modal-add-verif')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-laporan" onclick="closeModalOuter(event,'modal-laporan')">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Buat Laporan Baru</span><i class="ti ti-x" style="cursor:pointer;font-size:18px" onclick="closeModal('modal-laporan')"></i></div>
+    <div class="form-group"><label class="form-label">Judul Laporan</label><input class="form-control" placeholder="Contoh: Laporan Bulanan HSE - Juni 2025"></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Tipe Laporan</label><select class="form-control"><option>Bulanan</option><option>Kuartalan</option><option>Tahunan</option><option>Khusus</option></select></div><div class="form-group"><label class="form-label">Format Export</label><select class="form-control"><option>PDF</option><option>Excel (.xlsx)</option><option>PNG</option><option>JPG</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Periode Dari</label><input class="form-control" type="date"></div><div class="form-group"><label class="form-label">Periode Sampai</label><input class="form-control" type="date"></div></div>
+    <div class="form-group"><label class="form-label">Konten Laporan</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px">
+        <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" checked>Ringkasan Investigasi</label>
+        <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" checked>Status Rekomendasi</label>
+        <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" checked>Overdue List</label>
+        <label style="display:flex;align-items:center;gap:4px"><input type="checkbox">Root Cause Analysis</label>
+        <label style="display:flex;align-items:center;gap:4px"><input type="checkbox">Grafik Trend</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="showToast('Laporan berhasil dibuat dan siap diunduh.');closeModal('modal-laporan')"><i class="ti ti-file-download"></i>Generate & Download</button>
+      <button class="btn" onclick="closeModal('modal-laporan')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-dept" onclick="closeModalOuter(event,'modal-add-dept')">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Tambah Departemen</span><i class="ti ti-x" style="cursor:pointer;font-size:18px" onclick="closeModal('modal-add-dept')"></i></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Kode</label><input class="form-control" placeholder="OPS"></div><div class="form-group"><label class="form-label">Nama Departemen</label><input class="form-control" placeholder="Operation"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">PIC</label><input class="form-control" placeholder="Nama PIC"></div><div class="form-group"><label class="form-label">Email</label><input class="form-control" type="email" placeholder="dept@irem.co.id"></div></div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="showToast('Departemen berhasil ditambahkan.');closeModal('modal-add-dept')"><i class="ti ti-device-floppy"></i>Simpan</button><button class="btn" onclick="closeModal('modal-add-dept')">Batal</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-edit-dept" onclick="closeModalOuter(event,'modal-edit-dept')">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Edit Departemen</span><i class="ti ti-x" style="cursor:pointer;font-size:18px" onclick="closeModal('modal-edit-dept')"></i></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Kode</label><input class="form-control" value="OPS"></div><div class="form-group"><label class="form-label">Nama Departemen</label><input class="form-control" value="Operation"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">PIC</label><input class="form-control" value="Budi Santoso"></div><div class="form-group"><label class="form-label">Email</label><input class="form-control" value="ops@irem.co.id"></div></div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="showToast('Departemen berhasil diupdate.');closeModal('modal-edit-dept')"><i class="ti ti-device-floppy"></i>Update</button><button class="btn btn-danger" onclick="closeModal('modal-edit-dept');confirmDelete('departemen ini')"><i class="ti ti-trash"></i>Hapus</button><button class="btn" onclick="closeModal('modal-edit-dept')">Batal</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-tipe" onclick="closeModalOuter(event,'modal-add-tipe')">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Tambah Tipe Kejadian</span><i class="ti ti-x" style="cursor:pointer;font-size:18px" onclick="closeModal('modal-add-tipe')"></i></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Kode</label><input class="form-control" placeholder="INC"></div><div class="form-group"><label class="form-label">Nama Tipe</label><input class="form-control" placeholder="Kejadian Insiden"></div></div>
+    <div class="form-group"><label class="form-label">Keterangan</label><textarea class="form-control" rows="2" placeholder="Deskripsi tipe kejadian..."></textarea></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Warna Label</label><select class="form-control"><option>Biru</option><option>Oranye</option><option>Ungu</option><option>Kuning</option><option>Merah</option></select></div><div class="form-group"><label class="form-label">Status</label><select class="form-control"><option>Aktif</option><option>Nonaktif</option></select></div></div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="showToast('Tipe kejadian berhasil ditambahkan.');closeModal('modal-add-tipe')"><i class="ti ti-device-floppy"></i>Simpan</button><button class="btn" onclick="closeModal('modal-add-tipe')">Batal</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-edit-tipe" onclick="closeModalOuter(event,'modal-edit-tipe')">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Edit Tipe Kejadian</span><i class="ti ti-x" style="cursor:pointer;font-size:18px" onclick="closeModal('modal-edit-tipe')"></i></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Kode</label><input class="form-control" value="INC"></div><div class="form-group"><label class="form-label">Nama Tipe</label><input class="form-control" value="Kejadian Insiden"></div></div>
+    <div class="form-group"><label class="form-label">Keterangan</label><textarea class="form-control" rows="2">Insiden kerja yang memerlukan investigasi penuh</textarea></div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="showToast('Tipe berhasil diupdate.');closeModal('modal-edit-tipe')"><i class="ti ti-device-floppy"></i>Update</button><button class="btn btn-danger" onclick="closeModal('modal-edit-tipe');confirmDelete('tipe ini')"><i class="ti ti-trash"></i>Hapus</button><button class="btn" onclick="closeModal('modal-edit-tipe')">Batal</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-user" onclick="closeModalOuter(event,'modal-add-user')">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Tambah Pengguna</span><i class="ti ti-x" style="cursor:pointer;font-size:18px" onclick="closeModal('modal-add-user')"></i></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Nama Lengkap</label><input class="form-control" placeholder="Nama pengguna"></div><div class="form-group"><label class="form-label">Email</label><input class="form-control" type="email" placeholder="user@irem.co.id"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Departemen</label><select class="form-control"><option>HSE</option><option>Operation</option><option>Maintenance</option><option>Utilities</option><option>Construction</option></select></div><div class="form-group"><label class="form-label">Role</label><select class="form-control"><option>Admin</option><option>PIC</option><option>Viewer</option></select></div></div>
+    <div class="form-group"><label class="form-label">Password Awal</label><input class="form-control" type="password" placeholder="Minimal 8 karakter"></div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="showToast('Pengguna berhasil ditambahkan.');closeModal('modal-add-user')"><i class="ti ti-device-floppy"></i>Simpan</button><button class="btn" onclick="closeModal('modal-add-user')">Batal</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-edit-user" onclick="closeModalOuter(event,'modal-edit-user')">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Edit Pengguna</span><i class="ti ti-x" style="cursor:pointer;font-size:18px" onclick="closeModal('modal-edit-user')"></i></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Nama Lengkap</label><input class="form-control" value="Budi Santoso"></div><div class="form-group"><label class="form-label">Email</label><input class="form-control" value="budi@irem.co.id"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Departemen</label><select class="form-control"><option selected>Operation</option><option>Maintenance</option><option>HSE</option></select></div><div class="form-group"><label class="form-label">Role</label><select class="form-control"><option>Admin</option><option selected>PIC</option><option>Viewer</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Status</label><select class="form-control"><option>Aktif</option><option>Nonaktif</option></select></div><div class="form-group"><label class="form-label">Reset Password</label><input class="form-control" type="password" placeholder="Password baru (opsional)"></div></div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="showToast('Pengguna berhasil diupdate.');closeModal('modal-edit-user')"><i class="ti ti-device-floppy"></i>Update</button><button class="btn btn-danger" onclick="closeModal('modal-edit-user');confirmDelete('pengguna ini')"><i class="ti ti-trash"></i>Hapus</button><button class="btn" onclick="closeModal('modal-edit-user')">Batal</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-filter" onclick="closeModalOuter(event,'modal-filter')">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Filter Data</span><i class="ti ti-x" style="cursor:pointer;font-size:18px" onclick="closeModal('modal-filter')"></i></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Departemen</label><select class="form-control"><option value="">Semua</option><option>Operation</option><option>Maintenance</option><option>HSE</option><option>Utilities</option><option>Construction</option></select></div><div class="form-group"><label class="form-label">Tipe Kejadian</label><select class="form-control"><option value="">Semua</option><option>Insiden</option><option>Notifikasi BPJS</option><option>Near Miss</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Severity</label><select class="form-control"><option value="">Semua</option><option>High</option><option>Medium</option><option>Low</option></select></div><div class="form-group"><label class="form-label">Status</label><select class="form-control"><option value="">Semua</option><option>Open</option><option>In Progress</option><option>Closed</option><option>Overdue</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Tanggal Dari</label><input class="form-control" type="date"></div><div class="form-group"><label class="form-label">Tanggal Sampai</label><input class="form-control" type="date"></div></div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="showToast('Filter diterapkan.');closeModal('modal-filter')"><i class="ti ti-filter"></i>Terapkan Filter</button><button class="btn" onclick="showToast('Filter direset.');closeModal('modal-filter')">Reset Filter</button><button class="btn" onclick="closeModal('modal-filter')">Batal</button></div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title">Konfirmasi Hapus</div>
+    <div class="confirm-msg" id="confirm-msg">Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</div>
+    <div class="confirm-btns">
+      <button class="btn btn-danger" onclick="doDelete()"><i class="ti ti-trash"></i>Ya, Hapus</button>
+      <button class="btn" onclick="closeConfirm()">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const pageTitles = {
+  'dashboard':'Dashboard IREM','investigasi':'Investigasi','rekomendasi':'Rekomendasi',
+  'action':'Action Tracking','verifikasi':'Verifikasi Efektivitas','rootcause':'Repeat Root Cause',
+  'laporan':'Laporan','master-dept':'Master Data — Departemen','master-tipe':'Master Data — Tipe Kejadian',
+  'master-user':'Master Data — Pengguna','pengaturan':'Pengaturan'
+};
+
+function showPage(id, el) {
+  document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById('page-' + id);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[id] || id;
+  if (id === 'rootcause') setTimeout(buildRootChart, 100);
+  if (id === 'laporan') setTimeout(buildLaporanCharts, 100);
+}
+
+function toggleNav(key) {
+  const sub = document.getElementById('nav-' + key);
+  const arrow = document.getElementById('arrow-' + key);
+  const open = sub.classList.toggle('open');
+  if (arrow) arrow.style.transform = open ? 'rotate(90deg)' : '';
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModalOuter(e, id) { if (e.target.id === id) closeModal(id); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+let deleteTarget = '';
+function confirmDelete(target) {
+  deleteTarget = target;
+  document.getElementById('confirm-msg').textContent = 'Apakah Anda yakin ingin menghapus ' + target + '? Tindakan ini tidak dapat dibatalkan.';
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); }
+function doDelete() { closeConfirm(); showToast('Data "' + deleteTarget + '" berhasil dihapus.'); }
+
+function triggerImport(id) { document.getElementById(id).click(); }
+
+function handleImportExcel(input, type) {
+  if (!input.files[0]) return;
+  const f = input.files[0];
+  if (typeof XLSX !== 'undefined') {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const wb = XLSX.read(e.target.result, {type:'binary'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws);
+        showToast('Import berhasil: ' + data.length + ' baris data dari "' + f.name + '" ke modul ' + type + '.');
+      } catch(err) { showToast('Import berhasil: "' + f.name + '" ke modul ' + type + '.'); }
+    };
+    reader.readAsBinaryString(f);
+  } else {
+    showToast('File "' + f.name + '" siap diimport ke ' + type + '.');
+  }
+  input.value = '';
+}
+
+function handleImportImg(input) {
+  if (!input.files[0]) return;
+  const f = input.files[0];
+  showToast('Foto "' + f.name + '" berhasil diupload (' + Math.round(f.size/1024) + ' KB).');
+  input.value = '';
+}
+
+function filterTable(tbodyId, query) {
+  const q = query.toLowerCase();
+  const rows = document.querySelectorAll('#' + tbodyId + ' tr');
+  rows.forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function editRow(judul, pic, status, sev, tipe) {
+  document.getElementById('edit-judul').value = judul;
+  ['edit-pic','edit-status','edit-sev','edit-tipe'].forEach(function(id){ 
+    const el = document.getElementById(id); if(!el) return;
+    const val = id==='edit-pic'?pic : id==='edit-status'?status : id==='edit-sev'?sev : tipe;
+    for(let i=0;i<el.options.length;i++) if(el.options[i].text===val||el.options[i].value===val) el.selectedIndex=i;
+  });
+  openModal('modal-edit-row');
+}
+function editRek(rek, pic, status, pr) { editRow(rek, pic, status, pr, 'Rekomendasi'); }
+function editAction(judul, pic, status) { editRow(judul, pic, status, 'High', 'Insiden'); }
+
+function saveInvestigasi() {
+  const nomor = document.getElementById('inv-nomor').value;
+  const judul = document.getElementById('inv-judul').value;
+  if (!nomor || !judul) { showToast('No. Investigasi dan Judul wajib diisi.'); return; }
+  showToast('Investigasi "' + nomor + '" berhasil disimpan.');
+  closeModal('modal-add-inv');
+}
+
+function showFilterModal() { openModal('modal-filter'); }
+
+function updatePeriod(val) { showToast('Data diperbarui untuk periode: ' + val); }
+
+function exportExcel(type) {
+  if (typeof XLSX !== 'undefined') {
+    const sampleData = [['No','Data','Keterangan'],['1','Sample 1','Data ' + type],['2','Sample 2','Data ' + type]];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(sampleData);
+    XLSX.utils.book_append_sheet(wb, ws, type);
+    XLSX.writeFile(wb, 'IREM_' + type + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
+    showToast('File Excel "IREM_' + type + '.xlsx" berhasil diunduh.');
+  } else {
+    showToast('Mengunduh Excel: IREM_' + type + '.xlsx');
+  }
+}
+
+function exportPagePNG(pageId) {
+  if (typeof html2canvas !== 'undefined') {
+    const el = document.getElementById(pageId);
+    html2canvas(el, {scale:1.5,useCORS:true,backgroundColor:'#f0f2f5'}).then(function(canvas){
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = 'IREM_' + pageId + '_' + new Date().toISOString().slice(0,10) + '.png';
+      a.click();
+      showToast('File PNG berhasil diunduh.');
+    });
+  } else { showToast('Mengunduh PNG: IREM_' + pageId + '.png'); }
+}
+
+function exportPageJPG(pageId) {
+  if (typeof html2canvas !== 'undefined') {
+    const el = document.getElementById(pageId);
+    html2canvas(el, {scale:1.5,useCORS:true,backgroundColor:'#ffffff'}).then(function(canvas){
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/jpeg', 0.92);
+      a.download = 'IREM_' + pageId + '_' + new Date().toISOString().slice(0,10) + '.jpg';
+      a.click();
+      showToast('File JPG berhasil diunduh.');
+    });
+  } else { showToast('Mengunduh JPG: IREM_' + pageId + '.jpg'); }
+}
+
+function exportPDF(label) { showToast('Menyiapkan PDF: IREM_' + label + '.pdf... (membutuhkan backend PDF generator)'); }
+
+function doLogout() {
+  if (confirm('Apakah Anda yakin ingin logout?')) {
+    showToast('Anda telah berhasil logout.');
+    setTimeout(function(){ document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:Arial;flex-direction:column;gap:12px;color:#0f2044"><div style="font-size:32px;font-weight:700">IREM</div><div style="color:#888">Sesi telah berakhir. Silakan refresh untuk login kembali.</div></div>'; }, 1500);
+  }
+}
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+  if (tabId === 'tab-bulanan') setTimeout(buildBulananChart, 100);
+  if (tabId === 'tab-kuartalan') setTimeout(buildKuartalChart, 100);
+}
+
+// =================== CHARTS ===================
+const months17 = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des','Jan','Feb','Mar','Apr','Mei'];
+const insiden17 = [14,18,22,19,33,26,20,16,13,14,11,14,10,12,9,8,6];
+const bpjs17   = [4,6,7,5,10,8,6,5,4,4,3,4,3,4,3,2,2];
+const target17 = Array(17).fill(16);
+
+new Chart(document.getElementById('trendChart'),{
+  type:'line',
+  data:{
+    labels: months17,
+    datasets:[
+      {label:'Kejadian Insiden',data:insiden17,borderColor:'#1a8fff',backgroundColor:'rgba(26,143,255,.1)',tension:.35,fill:true,pointRadius:3,pointHoverRadius:5,borderWidth:2},
+      {label:'Notifikasi BPJS',data:bpjs17,borderColor:'#e8811a',borderDash:[5,4],tension:.35,fill:false,pointRadius:3,pointStyle:'triangle',borderWidth:2},
+      {label:'Target',data:target17,borderColor:'#16a34a',borderDash:[4,4],fill:false,pointRadius:0,borderWidth:1.5}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:function(c){return c[0].label+(c[0].dataIndex<12?' 2024':' 2025');}}}},scales:{x:{ticks:{font:{size:9},autoSkip:false,maxRotation:45}},y:{ticks:{font:{size:9}},beginAtZero:true,title:{display:true,text:'Jumlah',font:{size:9}}}}}
+});
+
+new Chart(document.getElementById('statusChart'),{
+  type:'doughnut',
+  data:{labels:['Closed Efektif','In Progress','Open','Overdue'],datasets:[{data:[141,78,19,18],backgroundColor:['#16a34a','#1a8fff','#e8811a','#dc2626'],borderWidth:2,borderColor:'#fff',hoverOffset:4}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'62%'}
+});
+
+new Chart(document.getElementById('severityChart'),{
+  type:'doughnut',
+  data:{labels:['High','Medium','Low'],datasets:[{data:[46,60,22],backgroundColor:['#dc2626','#e8811a','#16a34a'],borderWidth:2,borderColor:'#fff',hoverOffset:4}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'62%'}
+});
+
+new Chart(document.getElementById('effectChart'),{
+  type:'line',
+  data:{
+    labels: months17,
+    datasets:[
+      {label:'Effectiveness',data:[70,72,75,78,82,84,82,80,81,82,83,82,82,82,82,82,82],borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.08)',tension:.35,fill:true,pointRadius:2,borderWidth:2},
+      {label:'Target 85%',data:Array(17).fill(85),borderColor:'#16a34a',borderDash:[4,4],fill:false,pointRadius:0,borderWidth:1.5}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:8},autoSkip:true,maxTicksLimit:8}},y:{min:60,max:100,ticks:{font:{size:9},callback:function(v){return v+'%'}}}}}
+});
+
+let rootChartInst = null;
+function buildRootChart() {
+  if (rootChartInst) { rootChartInst.destroy(); rootChartInst = null; }
+  const ctx = document.getElementById('rootChart');
+  if (!ctx) return;
+  rootChartInst = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['Weak Supervision','Poor Maint. Planning','SOP Not Followed','Inadequate Training','Comm. Failure'],
+      datasets:[{label:'Frekuensi',data:[21,17,13,8,5],backgroundColor:['#dc2626','#e8811a','#e8811a','#16a34a','#0d9488'],borderRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9}}},y:{ticks:{font:{size:10}}}}}
+  });
+}
+
+let bulananChartInst = null, kuartalChartInst = null;
+function buildLaporanCharts() {
+  if (document.getElementById('tab-bulanan').classList.contains('active')) buildBulananChart();
+}
+function buildBulananChart() {
+  if (bulananChartInst) { bulananChartInst.destroy(); bulananChartInst = null; }
+  const ctx = document.getElementById('bulananChart');
+  if (!ctx) return;
+  bulananChartInst = new Chart(ctx,{
+    type:'bar',
+    data:{labels:['Jan','Feb','Mar','Apr','Mei'],datasets:[
+      {label:'Kejadian Insiden',data:[14,18,22,19,6],backgroundColor:'rgba(26,143,255,.7)',borderRadius:4},
+      {label:'Notif BPJS',data:[4,6,7,5,2],backgroundColor:'rgba(232,129,26,.7)',borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10}}}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:9}},beginAtZero:true}}}
+  });
+}
+function buildKuartalChart() {
+  if (kuartalChartInst) { kuartalChartInst.destroy(); kuartalChartInst = null; }
+  const ctx = document.getElementById('kuartalChart');
+  if (!ctx) return;
+  kuartalChartInst = new Chart(ctx,{
+    type:'bar',
+    data:{labels:['Total Investigasi','Total Rekomendasi','Closed Rekomendasi','Overdue','Repeat Incident'],datasets:[
+      {label:'Q1 2025',data:[38,96,74,12,3],backgroundColor:'rgba(26,143,255,.75)',borderRadius:4},
+      {label:'Q2 2025',data:[22,64,51,6,2],backgroundColor:'rgba(16,163,74,.75)',borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10}}}},scales:{x:{ticks:{font:{size:9}}},y:{ticks:{font:{size:9}},beginAtZero:true}}}
+  });
+}
+</script>
+</body>
+</html>
