@@ -209,13 +209,39 @@
   </div>
 
   <!-- MAIN -->
-  <div class="main">
-    <div class="topbar">
-      <div class="topbar-title" id="page-title">Dashboard IREM</div>
-      <select class="period-select" id="period-select" onchange="updatePeriod(this.value)">
-        <option value="2024-2025">Periode: Jan 2024 – Mei 2025</option>
-        <option value="2023">Periode: Jan 2023 – Des 2023</option>
-        <option value="2022">Periode: Jan 2022 – Des 2022</option>
+ function updatePeriod(periode) {
+  // Menampilkan notifikasi
+  showToast('Data diperbarui untuk periode: ' + periode);
+  
+  // LOGIKA PERUBAHAN DATA berdasarkan periode yang dipilih
+  if (periode === "2024-2025") {
+    // Data untuk periode 2024-2025 (data asli)
+    document.getElementById("kpi-total").innerText = "128";
+    document.getElementById("kpi-rek").innerText = "256";
+    document.getElementById("kpi-closure").innerText = "87%";
+    document.getElementById("kpi-overdue").innerText = "18";
+    document.getElementById("kpi-effect").innerText = "82%";
+    document.getElementById("kpi-repeat").innerText = "7";
+  }
+  else if (periode === "2023") {
+    // Data untuk tahun 2023
+    document.getElementById("kpi-total").innerText = "112";
+    document.getElementById("kpi-rek").innerText = "198";
+    document.getElementById("kpi-closure").innerText = "84%";
+    document.getElementById("kpi-overdue").innerText = "24";
+    document.getElementById("kpi-effect").innerText = "79%";
+    document.getElementById("kpi-repeat").innerText = "9";
+  }
+  else if (periode === "2022") {
+    // Data untuk tahun 2022
+    document.getElementById("kpi-total").innerText = "95";
+    document.getElementById("kpi-rek").innerText = "167";
+    document.getElementById("kpi-closure").innerText = "81%";
+    document.getElementById("kpi-overdue").innerText = "22";
+    document.getElementById("kpi-effect").innerText = "76%";
+    document.getElementById("kpi-repeat").innerText = "11";
+  }
+}
       </select>
       <button class="btn-filter btn" onclick="showFilterModal()"><i class="ti ti-filter"></i>Filter</button>
       <div class="user-badge">
